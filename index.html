@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جولة - JAWLA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+        body { font-family: 'Tajawal', sans-serif; background-color: #0f172a; }
+        .gold-glow { box-shadow: 0 0 20px rgba(234, 179, 8, 0.3); }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center p-4">
+
+    <div class="w-full max-w-md flex justify-between items-center py-6 border-b border-gray-700">
+        <h1 class="text-2xl font-black text-yellow-500 tracking-tighter">JAWLA</h1>
+        <div class="text-left font-bold bg-gray-800 px-4 py-1 rounded-full border border-gray-600">
+            <span id="points" class="text-green-400 text-xl">0</span> 
+            <span class="text-xs text-gray-400">نقطة</span>
+        </div>
+    </div>
+
+    <div class="mt-12 text-center">
+        <div class="w-60 h-60 rounded-full border-8 border-yellow-500/20 flex flex-col items-center justify-center bg-gray-800/40 gold-glow relative">
+            <p class="text-gray-400 text-sm mb-1 uppercase tracking-widest">Next Claim</p>
+            <h2 id="timer" class="text-4xl font-mono font-bold text-white">04:00:00</h2>
+            <div class="absolute inset-0 rounded-full border border-yellow-500/10 animate-pulse"></div>
+        </div>
+        
+        <button id="claimBtn" onclick="claimPoints()" class="mt-10 bg-yellow-500 disabled:bg-gray-700 disabled:text-gray-400 text-black font-black px-14 py-4 rounded-2xl shadow-lg active:scale-95 transition-all text-xl">
+            استلام النقاط
+        </button>
+    </div>
+
+    <div class="w-full max-w-md mt-16">
+        <h3 class="text-right mb-4 font-bold text-gray-400 flex items-center justify-end gap-2">
+            صناديق الحظ <span class="text-xl">🎁</span>
+        </h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div onclick="openBox(100, 'bronze')" class="bg-gray-800 p-5 rounded-3xl border border-gray-700 text-center active:scale-95 transition-transform">
+                <span class="text-3xl block mb-2">📦</span>
+                <p class="text-sm font-bold">برونزي</p>
+                <p class="text-xs text-yellow-500 font-bold mt-1">100 نقطة</p>
+            </div>
+            <div onclick="openBox(250, 'silver')" class="bg-gray-800 p-5 rounded-3xl border border-gray-700 text-center active:scale-95 transition-transform">
+                <span class="text-3xl block mb-2">🥈</span>
+                <p class="text-sm font-bold">فضي</p>
+                <p class="text-xs text-yellow-500 font-bold mt-1">250 نقطة</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // نظام التخزين المحلي (مؤقت حتى تربط Firebase)
+        let points = parseInt(localStorage.getItem('points')) || 0;
+        let lastClaim = parseInt(localStorage.getItem('lastClaim')) || 0;
+        
+        const claimBtn = document.getElementById('claimBtn');
+        const timerDisplay = document.getElementById('timer');
+        const pointsDisplay = document.getElementById('points');
+
+        function updateUI() {
+            pointsDisplay.innerText = points;
+            const now = Date.now();
+            const cooldown = 4 * 60 * 60 * 1000; // 4 ساعات
+            const diff = cooldown - (now - lastClaim);
+
+            if (diff <= 0) {
+                timerDisplay.innerText = "00:00:00";
+                claimBtn.disabled = false;
+                claimBtn.classList.remove('opacity-50');
+            } else {
+                claimBtn.disabled = true;
+                claimBtn.classList.add('opacity-50');
+                let h = Math.floor(diff / 3600000);
+                let m = Math.floor((diff % 3600000) / 60000);
+                let s = Math.floor((diff % 60000) / 1000);
+                timerDisplay.innerText = 
+                    `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+                setTimeout(updateUI, 1000);
+            }
+        }
+
+        function claimPoints() {
+            points += 10;
+            lastClaim = Date.now();
+            localStorage.setItem('points', points);
+            localStorage.setItem('lastClaim', lastClaim);
+            updateUI();
+            alert("✅ مبروك! حصلت على 10 نقاط.");
+        }
+
+        function openBox(cost, type) {
+            if (points < cost) {
+                alert("❌ نقاطك غير كافية لفتح هذا الصندوق!");
+                return;
+            }
+            
+            points -= cost;
+            localStorage.setItem('points', points);
+            
+            let rand = Math.random() * 100;
+            let message = "";
+            
+            // نظام احتمالات بسيط
+            if (rand < 40) {
+                message = "💔 للأسف الصندوق فارغ!";
+            } else if (rand < 80) {
+                let prize = Math.floor(cost * 1.5);
+                points += prize;
+                message = `🎉 مبروك! ربحت ${prize} نقطة`;
+            } else {
+                points += (cost * 3);
+                message = "🔥 جولة الحظ! ربحت جائزة كبرى من النقاط!";
+            }
+            
+            alert(message);
+            updateUI();
+        }
+
+        // تشغيل التحديث عند فتح الصفحة
+        updateUI();
+    </script>
+</body>
+</html>
